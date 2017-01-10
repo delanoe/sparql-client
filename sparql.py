@@ -122,7 +122,7 @@ def Datatype(value):
     """
     if value==None:
         r = None
-    elif datatype_dict.has_key(value):
+    elif value in datatype_dict :
         r = datatype_dict[value]
     else:
         r = datatype_dict[value] = value
@@ -190,7 +190,7 @@ class Literal(RDFTerm):
     Literals. These can take a data type or a language code.
     """
     def __init__(self, value, datatype=None, lang=None):
-        self.value = unicode(value)
+        self.value = value
         self.lang = lang
         self.datatype = datatype
 
@@ -242,8 +242,6 @@ def parse_n3_term(src):
     This parser understands IRIs and quoted strings; basic non-string types
     (integers, decimals, booleans, etc) are not supported yet.
     """
-
-    src = unicode(src)
 
     if src.startswith('<'):
         # `src` is an IRI
@@ -456,7 +454,11 @@ class _Query(_ServiceMixin):
             else:
                 separator = '?'
             uri = self.endpoint.strip() + separator + str(query)
+            print("endpoint", self.endpoint.strip())
+            print("separator", separator)
+            print("query", query.strip())
             print(uri)
+            #uri = 'https://www.rechercheisidore.fr/sparql/?query=select+distinct+%3FConcept+where+%7B%5B%5D+a+%3FConcept%7D'
             return urllib2.Request(uri)
         else:
             uri = self.endpoint.strip()
@@ -520,7 +522,6 @@ class _Query(_ServiceMixin):
         args = []
         # refs #72876 removing the replace of newline to allow the comments in sparql queries
         #statement = statement.replace("\n", " ").encode('utf-8')
-        statement = statement.encode('utf-8')
 
         pref = ' '.join(["PREFIX %s: <%s> " % (p, self._prefix_map[p]) for p in self._prefix_map])
 
@@ -671,7 +672,7 @@ def _interactive(endpoint):
                 sys.stdout.write("  done\n")
 
                 for row in result.fetchone():
-                    print ("\t".join(map(unicode,row)))
+                    print ("\t".join(row))
 
                 print
                 lines = []
@@ -717,7 +718,7 @@ if __name__ == '__main__':
     try:
         result = query(endpoint, q)
         for row in result.fetchone():
-            print ("\t".join(map(unicode,row)))
+            print ("\t".join(row))
     except SparqlException as e:
         faultString = e.message
         print >>sys.stderr, faultString
