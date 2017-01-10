@@ -48,17 +48,16 @@ Otherwise, the query is read from standard input.
 """
 
 from base64 import encodestring
-from string import replace
-from urllib import urlencode
+#from string import replace
+from urllib.parse import urlencode
 from xml.dom import pulldom
-import compiler
 import copy
 import decimal
 import re
 import tempfile
 
 import eventlet
-from eventlet.green import urllib2
+import urllib.request as urllib2
 
 try:
     __version__ = open('version.txt').read().strip()
@@ -274,27 +273,27 @@ def parse_n3_term(src):
 
         # Python literals syntax is mostly compatible with N3.
         # We don't execute the code, just turn it into an AST.
-        try:
-            ast = compiler.parse("value = u" + src)
-        except:
-            raise ValueError
+#        try:
+#            ast = compiler.parse("value = u" + src)
+#        except:
+#            raise ValueError
 
         # Don't allow any extra tokens in the AST
-        if len(ast.node.getChildNodes()) != 1:
-            raise ValueError
-        assign_node = ast.node.getChildNodes()[0]
-        if len(assign_node.getChildNodes()) != 2:
-            raise ValueError
-        value_node = assign_node.getChildNodes()[1]
-        if value_node.getChildNodes():
-            raise ValueError
-        if value_node.__class__ != compiler.ast.Const:
-            raise ValueError
-        value = value_node.value
-
-        if type(value) is not unicode:
-            raise ValueError
-
+#        if len(ast.node.getChildNodes()) != 1:
+#            raise ValueError
+#        assign_node = ast.node.getChildNodes()[0]
+#        if len(assign_node.getChildNodes()) != 2:
+#            raise ValueError
+#        value_node = assign_node.getChildNodes()[1]
+#        if value_node.getChildNodes():
+#            raise ValueError
+#        if value_node.__class__ != compiler.ast.Const:
+#            raise ValueError
+#        value = value_node.value
+#
+#        if type(value) is not unicode:
+#            raise ValueError
+#
         return Literal(value, datatype, lang)
 
 #########################################
@@ -374,8 +373,7 @@ class Service(_ServiceMixin):
         return q.query(query, timeout)
 
     def authenticate(self, username, password):
-        self._headers_map['Authorization'] = "Basic %s" % replace(
-                encodestring("%s:%s" % (username, password)), "\012", "")
+        self._headers_map['Authorization'] = "Basic %s" % encodestring("%s:%s" % (username, password)).replace("\012", "")
 
 def _parseBoolean(val):
     if val.lower() in ('true', '1'):
@@ -457,11 +455,12 @@ class _Query(_ServiceMixin):
                 separator = '&'
             else:
                 separator = '?'
-            uri = self.endpoint.strip() + separator + query
-            return urllib2.Request(uri.encode('ASCII'))
+            uri = self.endpoint.strip() + separator + str(query)
+            print(uri)
+            return urllib2.Request(uri)
         else:
-            uri = self.endpoint.strip().encode('ASCII')
-            return urllib2.Request(uri, data=query)
+            uri = self.endpoint.strip()
+            return urllib2.Request(uri, data=urlencode(query))
 
     def _get_response(self, opener, request, buf, timeout=None):
         try:
@@ -471,18 +470,18 @@ class _Query(_ServiceMixin):
                 buf.seek(0)
                 ret = buf.read()
                 buf.close()
-                raise SparqlException(response_code, ret)
+                raise (SparqlException(response_code, ret))
             else:
                 return response
-        except Exception, error:
-            raise SparqlException('Error', error.message)
+        except Exception as error:
+            raise (SparqlException('Error', error))
 
     def _read_response(self, response, buf, timeout):
         if timeout > 0:
             with eventlet.timeout.Timeout(timeout):
                 try:
                     buf.write(response.read())
-                except eventlet.timeout.Timeout, error:
+                except eventlet.timeout.Timeout as error:
                     raise SparqlException('Timeout', repr(error))
         else:
             buf.write(response.read())
@@ -525,7 +524,7 @@ class _Query(_ServiceMixin):
 
         pref = ' '.join(["PREFIX %s: <%s> " % (p, self._prefix_map[p]) for p in self._prefix_map])
 
-        statement = pref + statement
+        statement = str(pref) + str(statement)
 
         args.append(('query', statement))
 
@@ -672,12 +671,12 @@ def _interactive(endpoint):
                 sys.stdout.write("  done\n")
 
                 for row in result.fetchone():
-                    print "\t".join(map(unicode,row))
+                    print ("\t".join(map(unicode,row)))
 
                 print
                 lines = []
 
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write(str(e))
 
 
@@ -718,8 +717,8 @@ if __name__ == '__main__':
     try:
         result = query(endpoint, q)
         for row in result.fetchone():
-            print "\t".join(map(unicode,row))
-    except SparqlException, e:
+            print ("\t".join(map(unicode,row)))
+    except SparqlException as e:
         faultString = e.message
         print >>sys.stderr, faultString
 
