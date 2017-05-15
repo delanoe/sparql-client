@@ -454,11 +454,10 @@ class _Query(_ServiceMixin):
             else:
                 separator = '?'
             uri = self.endpoint.strip() + separator + str(query)
-            print("endpoint", self.endpoint.strip())
-            print("separator", separator)
-            print("query", query.strip())
-            print(uri)
-            #uri = 'https://www.rechercheisidore.fr/sparql/?query=select+distinct+%3FConcept+where+%7B%5B%5D+a+%3FConcept%7D'
+            #print("endpoint", self.endpoint.strip())
+            #print("separator", separator)
+            #print("query", query.strip())
+            #print(uri)
             return urllib2.Request(uri)
         else:
             uri = self.endpoint.strip()
